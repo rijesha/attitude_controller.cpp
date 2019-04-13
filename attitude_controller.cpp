@@ -7,13 +7,13 @@ std::chrono::duration<float> elapsed = current_run_time - last_run_time;
 int i = 0;
 
 void AttitudeController::calc_average_velocity(){
-    vel_avg[avg_ind % 3] = ned_vel_curr;
+    vel_avg[avg_ind % 3] = vel_curr;
     if (reinitialize_state || i < AVGS) {
         if (reinitialize_state) i = 0;
         i++;
-        ned_vel_curr_avg = ned_vel_curr;
+        vel_curr_avg = vel_curr;
     } else {
-        ned_vel_curr_avg = (vel_avg[0] + vel_avg[1] + vel_avg[2])/3;
+        vel_curr_avg = (vel_avg[0] + vel_avg[1] + vel_avg[2])/3;
     }
     avg_ind++;
 }
@@ -29,16 +29,16 @@ void AttitudeController::update_dt()  {
 
 void AttitudeController::update_velocity_state()  {
     if (!reinitialize_state){
-        ned_vel_curr = (ned_pos_curr - ned_pos_last)/dt;
+        vel_curr = (pos_curr - pos_last)/dt;
     }
-    ned_pos_last = ned_pos_curr;
+    pos_last = pos_curr;
 }
 
 void AttitudeController::update_velocity_err_integration()  {
     if (reinitialize_state) {
-        ned_vel_int = {0, 0, 0};
+        vel_int = {0, 0, 0};
     } else {
-        ned_vel_int += ned_vel_err*dt;
+        vel_int += vel_err*dt;
     }
 }
 
@@ -72,53 +72,55 @@ void AttitudeController::updateQuaternion(){
     q4 = cr2*cp2*sy2 - sr2*sp2*cy2;
 }
 
-void AttitudeController::run_loop(float curr_x, float curr_y, float curr_z, float desir_x, float desir_y, float desir_z, float desir_yaw){
+void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     update_dt();
 
-    ned_pos_curr = {curr_x, curr_y, curr_z};
+    pos_curr = current_pos;
     
     //updating current velocity
     update_velocity_state();
     calc_average_velocity();
 
     //Calculating position error
-    ned_pos_desi = {desir_x, desir_y, desir_z};
-    ned_pos_err = ned_pos_desi - ned_pos_curr;
+    pos_desi = desired_pos;
+    pos_err = pos_desi - pos_curr;
 
     //Calculating desired velocity
-    ned_vel_desi = ned_pos_err.multiplyGain(pos_pgain);
+    vel_desi = pos_err.multiplyGain(pos_pgain);
 
     //bind velocity to max
-    ned_vel_desi.bindToMaxVal(max_vel);
+    vel_desi.bindToMaxVal(max_vel);
 
     //calculating velocity error
-    ned_vel_err = ned_vel_desi - ned_vel_curr_avg;
+    vel_err = vel_desi - vel_curr_avg;
 
     //updating velocity error integration
     update_velocity_err_integration();
 
     //calculating desired acceleration
-    ned_acc_desi = ned_vel_err.multiplyGain(vel_pgain) + ned_vel_int.multiplyGain(vel_igain);
+    acc_desi = vel_err.multiplyGain(vel_pgain) + vel_int.multiplyGain(vel_igain);
+    reinitialize_state = false;
+}
 
-    pitch_target = atanf(-ned_acc_desi.x/(9.806))*(180.0f/M_PI);
+void AttitudeController::rotateAccelerations(float acc_x, float acc_y, float current_yaw){
+    float acc_x_new = -acc_x * cos(current_yaw) - acc_y * sin(current_yaw);
+    float acc_y_new = -acc_x * sin(current_yaw) + acc_y * cos(current_yaw);
+}
+
+void AttitudeController::acceleration_to_attitude(float forward_acc, float right_acc, float desir_yaw){
+    pitch_target = atanf(-forward_acc/(9.806))*(180.0f/M_PI);
     cos_pitch_target = cosf(pitch_target*M_PI/180.0f);
-    roll_target = atanf(ned_acc_desi.y*cos_pitch_target/(9.806))*(180.0f/M_PI);
-
-    //climb_rate_cms = (packet.thrust - 0.5f) * 2.0f * copter.wp_nav->get_default_speed_up();
-    thrust = (ned_vel_desi.z*100)/(2.0*10) + 0.5;
-    thrust = bind_max_value(thrust,1,0);
-
-    pitch_target = bind_max_value(pitch_target, 10);
-    roll_target = bind_max_value(roll_target, 10);
+    roll_target = atanf(right_acc*cos_pitch_target/(9.806))*(180.0f/M_PI);
+    
+    pitch_target = bind_max_value(pitch_target, MAX_ANGLE);
+    roll_target = bind_max_value(roll_target, MAX_ANGLE);
     yaw_target = desir_yaw;
 
     updateQuaternion();
+}
 
-    if (!reinitialize_state){
-        //send message
-
-    }
-    reinitialize_state = false;
+Vector3f AttitudeController::get_desired_velocity(){
+    return vel_desi;
 }
 
 string AttitudeController::get_state_string(){
@@ -126,16 +128,16 @@ string AttitudeController::get_state_string(){
     output << std::fixed;
     output << std::setprecision(5);
 
-    output << ned_pos_curr.x << ',' << ned_pos_curr.y << ',' << ned_pos_curr.z;
-    output << ned_pos_last.x << ',' << ned_pos_last.y << ',' << ned_pos_last.z;
-    output << ned_pos_err.x  << ',' << ned_pos_err.y  << ',' << ned_pos_err.z;
-    output << ned_pos_desi.x << ',' << ned_pos_desi.y << ',' << ned_pos_desi.z;
-    output << ned_vel_curr.x << ',' << ned_vel_curr.y << ',' << ned_vel_curr.z;
-    output << ned_vel_last.x << ',' << ned_vel_last.y << ',' << ned_vel_last.z;
-    output << ned_vel_desi.x << ',' << ned_vel_desi.y << ',' << ned_vel_desi.z;
-    output << ned_vel_err.x  << ',' << ned_vel_err.y  << ',' << ned_vel_err.z;
-    output << ned_vel_int.x  << ',' << ned_vel_int.y  << ',' << ned_vel_int.z;
-    output << ned_acc_desi.x << ',' << ned_acc_desi.y << ',' << ned_acc_desi.z;
+    output << pos_curr.x << ',' << pos_curr.y << ',' << pos_curr.z;
+    output << pos_last.x << ',' << pos_last.y << ',' << pos_last.z;
+    output << pos_err.x  << ',' << pos_err.y  << ',' << pos_err.z;
+    output << pos_desi.x << ',' << pos_desi.y << ',' << pos_desi.z;
+    output << vel_curr.x << ',' << vel_curr.y << ',' << vel_curr.z;
+    output << vel_last.x << ',' << vel_last.y << ',' << vel_last.z;
+    output << vel_desi.x << ',' << vel_desi.y << ',' << vel_desi.z;
+    output << vel_err.x  << ',' << vel_err.y  << ',' << vel_err.z;
+    output << vel_int.x  << ',' << vel_int.y  << ',' << vel_int.z;
+    output << acc_desi.x << ',' << acc_desi.y << ',' << acc_desi.z;
     
     output << pitch_target << ',';
     output << roll_target << ',';   
@@ -146,8 +148,7 @@ string AttitudeController::get_state_string(){
 
 
 //To do
-//rotate frame
-//send message code
 //test what happens if the uav doesn't recevie messages frequently enough.
 //Have fun in life.
 //Set wp speed up to 10cm/s or change thrust math
+//check avg velcotiy calc

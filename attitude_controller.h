@@ -12,26 +12,27 @@ using namespace std;
 #define RESET_STATE_DT 0.1
 #define MAX_HORZ_VEL 0.1
 #define MAX_VERT_VEL 0.1
+#define MAX_ANGLE 10
 #define AVGS 3
 
 class AttitudeController {
     private:
         bool reinitialize_state = true;
 
-        Vector3f ned_pos_curr = {0, 0, 0};
-        Vector3f ned_pos_last = {0, 0, 0};
-        Vector3f ned_pos_err  = {0, 0, 0};
+        Vector3f pos_curr = {0, 0, 0};
+        Vector3f pos_last = {0, 0, 0};
+        Vector3f pos_err  = {0, 0, 0};
 
-        Vector3f ned_pos_desi = {0, 0, 0};
+        Vector3f pos_desi = {0, 0, 0};
 
-        Vector3f ned_vel_curr = {0, 0, 0};
-        Vector3f ned_vel_last = {0, 0, 0};
+        Vector3f vel_curr = {0, 0, 0};
+        Vector3f vel_last = {0, 0, 0};
 
-        Vector3f ned_vel_desi = {0, 0, 0};
-        Vector3f ned_vel_err  = {0, 0, 0};
-        Vector3f ned_vel_int  = {0, 0, 0};
+        Vector3f vel_desi = {0, 0, 0};
+        Vector3f vel_err  = {0, 0, 0};
+        Vector3f vel_int  = {0, 0, 0};
 
-        Vector3f ned_acc_desi = {0, 0, 0};
+        Vector3f acc_desi = {0, 0, 0};
 
         Vector3f pos_pgain = {1, 1, 1};
         Vector3f vel_pgain = {1, 1, 1};
@@ -53,7 +54,7 @@ class AttitudeController {
 
         int avg_ind = 0;
         Vector3f vel_avg[AVGS] = {{0, 0, 0},{0, 0, 0},{0, 0, 0}};
-        Vector3f ned_vel_curr_avg = {0,0,0};
+        Vector3f vel_curr_avg = {0,0,0};
 
         void calc_average_velocity();
         void update_dt();
@@ -67,6 +68,9 @@ class AttitudeController {
 
     public:
         AttitudeController();
-        void run_loop(float curr_x, float curr_y, float curr_z, float desir_x, float desir_y, float desir_z, float desir_yaw);
+        void run_loop(Vector3f current_pos, Vector3f desired_pos);
+        void acceleration_to_attitude(float forward_acc, float right_acc, float desir_yaw = 0);
+        void rotateAccelerations(float acc_x, float acc_y, float current_yaw);
+        Vector3f get_desired_velocity(void );
         string get_state_string(void );
 }

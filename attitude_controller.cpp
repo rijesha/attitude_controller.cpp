@@ -1,9 +1,5 @@
 #include "attitude_controller.h"
 
-std::chrono::time_point last_run_time = std::chrono::high_resolution_clock::now();
-std::chrono::time_point current_run_time = std::chrono::high_resolution_clock::now();
-std::chrono::duration<float> elapsed = current_run_time - last_run_time;
-
 int i = 0;
 
 void AttitudeController::calc_average_velocity(){
@@ -72,6 +68,8 @@ void AttitudeController::updateQuaternion(){
     q4 = cr2*cp2*sy2 - sr2*sp2*cy2;
 }
 
+AttitudeController::AttitudeController(){}
+
 void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     update_dt();
 
@@ -92,7 +90,7 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     vel_desi.bindToMaxVal(max_vel);
 
     //calculating velocity error
-    vel_err = vel_desi - vel_curr_avg;
+    vel_err = vel_desi - vel_curr;
 
     //updating velocity error integration
     update_velocity_err_integration();
@@ -102,21 +100,20 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     reinitialize_state = false;
 }
 
-void AttitudeController::rotateAccelerations(float acc_x, float acc_y, float current_yaw){
-    float acc_x_new = -acc_x * cos(current_yaw) - acc_y * sin(current_yaw);
-    float acc_y_new = -acc_x * sin(current_yaw) + acc_y * cos(current_yaw);
-}
+void AttitudeController::acceleration_to_attitude(float forward_acc, float right_acc, float rot, float desir_yaw){
+    this->forward_acc = forward_acc;
+    this->right_acc = right_acc;
 
-void AttitudeController::acceleration_to_attitude(float forward_acc, float right_acc, float desir_yaw){
-    pitch_target = atanf(-forward_acc/(9.806))*(180.0f/M_PI);
+    rot_forward_acc = forward_acc * cos(rot) - right_acc * sin(rot);
+    rot_right_acc = forward_acc * sin(rot) + right_acc * cos(rot);
+
+    pitch_target = atanf(-rot_forward_acc/(9.806))*(180.0f/M_PI);
     cos_pitch_target = cosf(pitch_target*M_PI/180.0f);
-    roll_target = atanf(right_acc*cos_pitch_target/(9.806))*(180.0f/M_PI);
+    roll_target = atanf(rot_right_acc*cos_pitch_target/(9.806))*(180.0f/M_PI);
     
     pitch_target = bind_max_value(pitch_target, MAX_ANGLE);
     roll_target = bind_max_value(roll_target, MAX_ANGLE);
     yaw_target = desir_yaw;
-
-    updateQuaternion();
 }
 
 Vector3f AttitudeController::get_desired_velocity(){
@@ -138,11 +135,14 @@ string AttitudeController::get_state_string(){
     output << vel_err.x  << ',' << vel_err.y  << ',' << vel_err.z;
     output << vel_int.x  << ',' << vel_int.y  << ',' << vel_int.z;
     output << acc_desi.x << ',' << acc_desi.y << ',' << acc_desi.z;
+
+    output << forward_acc << ',' << right_acc << ','; 
+    output << rot_forward_acc << ',' << rot_right_acc << ',';
     
     output << pitch_target << ',';
     output << roll_target << ',';   
     output << yaw_target << ',';
-    output << thrust << ',' << endl;
+    output << thrust;
     return output.str();
 }
 

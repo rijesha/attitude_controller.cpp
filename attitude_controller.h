@@ -17,34 +17,6 @@ using namespace std;
 
 class AttitudeController {
     private:
-        bool reinitialize_state = true;
-
-        Vector3f pos_curr = {0, 0, 0};
-        Vector3f pos_last = {0, 0, 0};
-        Vector3f pos_err  = {0, 0, 0};
-
-        Vector3f pos_desi = {0, 0, 0};
-
-        Vector3f vel_curr = {0, 0, 0};
-        Vector3f vel_last = {0, 0, 0};
-
-        Vector3f vel_desi = {0, 0, 0};
-        Vector3f vel_err  = {0, 0, 0};
-        Vector3f vel_int  = {0, 0, 0};
-
-        Vector3f acc_desi = {0, 0, 0};
-
-        Vector3f pos_pgain = {1, 1, 1};
-        Vector3f vel_pgain = {1, 1, 1};
-        Vector3f vel_igain = {0.0001, 0.0001, 0.0001};
-        Vector3f max_vel = {MAX_HORZ_VEL, MAX_HORZ_VEL, MAX_VERT_VEL};
-
-        float hover_throttle = 0.5;
-        float pitch_target;
-        float cos_pitch_target;
-        float roll_target;   
-        float yaw_target;
-        float thrust;
 
         std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> last_run_time = std::chrono::high_resolution_clock::now();
         std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> current_run_time = std::chrono::high_resolution_clock::now();
@@ -69,8 +41,41 @@ class AttitudeController {
     public:
         AttitudeController();
         void run_loop(Vector3f current_pos, Vector3f desired_pos);
-        void acceleration_to_attitude(float forward_acc, float right_acc, float desir_yaw = 0);
-        void rotateAccelerations(float acc_x, float acc_y, float current_yaw);
+        void acceleration_to_attitude(float forward_acc, float right_acc, float rot, float desir_yaw = 0);
         Vector3f get_desired_velocity(void );
         string get_state_string(void );
-}
+
+        bool reinitialize_state = true;
+
+        Vector3f pos_curr = {0, 0, 0};
+        Vector3f pos_last = {0, 0, 0};
+        Vector3f pos_err  = {0, 0, 0};
+
+        Vector3f pos_desi = {0, 0, 0};
+
+        Vector3f vel_curr = {0, 0, 0};
+        Vector3f vel_last = {0, 0, 0};
+
+        Vector3f vel_desi = {0, 0, 0};
+        Vector3f vel_err  = {0, 0, 0};
+        Vector3f vel_int  = {0, 0, 0};
+
+        Vector3f acc_desi = {0, 0, 0};
+
+        Vector3f pos_pgain = {1, 1, 1};
+        Vector3f vel_pgain = {1, 1, 1};
+        Vector3f vel_igain = {0.00001, 0.00001, 0.00001};
+        Vector3f max_vel = {MAX_HORZ_VEL, MAX_HORZ_VEL, MAX_VERT_VEL};
+
+        float forward_acc;
+        float right_acc;
+        float rot_forward_acc;
+        float rot_right_acc;
+
+        float hover_throttle = 0.5;
+        float pitch_target;
+        float cos_pitch_target;
+        float roll_target;   
+        float yaw_target;
+        float thrust;
+};

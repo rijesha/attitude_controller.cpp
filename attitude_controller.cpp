@@ -104,8 +104,8 @@ void AttitudeController::acceleration_to_attitude(float forward_acc, float right
     this->forward_acc = forward_acc;
     this->right_acc = right_acc;
 
-    rot_forward_acc = forward_acc * cos(rot) - right_acc * sin(rot);
-    rot_right_acc = forward_acc * sin(rot) + right_acc * cos(rot);
+    rot_right_acc = right_acc * cos(rot) - forward_acc * sin(rot);
+    rot_forward_acc = right_acc * sin(rot) + forward_acc * cos(rot);
 
     pitch_target = atanf(-rot_forward_acc/(9.806))*(180.0f/M_PI);
     cos_pitch_target = cosf(pitch_target*M_PI/180.0f);
@@ -125,16 +125,15 @@ string AttitudeController::get_state_string(){
     output << std::fixed;
     output << std::setprecision(5);
 
-    output << pos_curr.x << ',' << pos_curr.y << ',' << pos_curr.z;
-    output << pos_last.x << ',' << pos_last.y << ',' << pos_last.z;
-    output << pos_err.x  << ',' << pos_err.y  << ',' << pos_err.z;
-    output << pos_desi.x << ',' << pos_desi.y << ',' << pos_desi.z;
-    output << vel_curr.x << ',' << vel_curr.y << ',' << vel_curr.z;
-    output << vel_last.x << ',' << vel_last.y << ',' << vel_last.z;
-    output << vel_desi.x << ',' << vel_desi.y << ',' << vel_desi.z;
-    output << vel_err.x  << ',' << vel_err.y  << ',' << vel_err.z;
-    output << vel_int.x  << ',' << vel_int.y  << ',' << vel_int.z;
-    output << acc_desi.x << ',' << acc_desi.y << ',' << acc_desi.z;
+    output << pos_curr.x << ',' << pos_curr.y << ',' << pos_curr.z << ',';
+    output << pos_last.x << ',' << pos_last.y << ',' << pos_last.z << ',';
+    output << pos_err.x  << ',' << pos_err.y  << ',' << pos_err.z  << ',';
+    output << pos_desi.x << ',' << pos_desi.y << ',' << pos_desi.z << ',';
+    output << vel_curr.x << ',' << vel_curr.y << ',' << vel_curr.z << ',';
+    output << vel_desi.x << ',' << vel_desi.y << ',' << vel_desi.z << ',';
+    output << vel_err.x  << ',' << vel_err.y  << ',' << vel_err.z  << ',';
+    output << vel_int.x  << ',' << vel_int.y  << ',' << vel_int.z  << ',';
+    output << acc_desi.x << ',' << acc_desi.y << ',' << acc_desi.z << ',';
 
     output << forward_acc << ',' << right_acc << ','; 
     output << rot_forward_acc << ',' << rot_right_acc << ',';

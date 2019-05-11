@@ -10,9 +10,9 @@
 using namespace std;
 
 #define RESET_STATE_DT 0.1
-#define MAX_HORZ_VEL 0.1
-#define MAX_VERT_VEL 0.1
-#define MAX_ANGLE 10
+#define MAX_HORZ_VEL 0.25
+#define MAX_VERT_VEL 0.25
+#define MAX_ANGLE 5
 #define AVGS 3
 
 class AttitudeController {
@@ -62,9 +62,10 @@ class AttitudeController {
 
         Vector3f acc_desi = {0, 0, 0};
 
-        Vector3f pos_pgain = {1, 1, 1};
-        Vector3f vel_pgain = {1, 1, 1};
-        Vector3f vel_igain = {0.00001, 0.00001, 0.00001};
+        Vector3f pos_pgain = {0.25, 0.25, 0.25};
+        Vector3f vel_pgain = {.8, .8, .8};
+
+        Vector3f vel_igain = {0.00000, 0.00000, 0.00000};
         Vector3f max_vel = {MAX_HORZ_VEL, MAX_HORZ_VEL, MAX_VERT_VEL};
 
         float forward_acc;

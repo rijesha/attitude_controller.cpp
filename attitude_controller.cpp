@@ -104,10 +104,15 @@ void AttitudeController::acceleration_to_attitude(float forward_acc, float right
     this->forward_acc = forward_acc;
     this->right_acc = right_acc;
 
-    rot_forward_acc = forward_acc * cos(rot) - right_acc * sin(rot);
-    rot_right_acc = forward_acc * sin(rot) + right_acc * cos(rot);
+    float rad_rot = rot*(180.0f/M_PI);
+
+    rot_right_acc = right_acc * cos(rad_rot) - forward_acc * sin(rad_rot);
+    rot_forward_acc = right_acc * sin(rad_rot) + forward_acc * cos(rad_rot);
 
     pitch_target = atanf(-rot_forward_acc/(9.806))*(180.0f/M_PI);
+    
+    
+    
     cos_pitch_target = cosf(pitch_target*M_PI/180.0f);
     roll_target = atanf(rot_right_acc*cos_pitch_target/(9.806))*(180.0f/M_PI);
     

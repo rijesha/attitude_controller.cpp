@@ -81,7 +81,7 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
 
     //Calculating position error
     pos_desi = desired_pos;
-    pos_err = pos_desi - pos_curr;
+    pos_err = pos_curr - pos_desi;
 
     //Calculating desired velocity
     vel_desi = pos_err.multiplyGain(pos_pgain);
@@ -90,8 +90,8 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     vel_desi.bindToMaxVal(max_vel);
 
     //calculating velocity error
-    vel_err = vel_desi - vel_curr;
-
+    vel_err = vel_curr - vel_desi;
+    
     //updating velocity error integration
     update_velocity_err_integration();
 

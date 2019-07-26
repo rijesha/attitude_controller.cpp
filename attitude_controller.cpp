@@ -1,17 +1,33 @@
 #include "attitude_controller.h"
 
-int i = 0;
+int i1 = 0;
+int i2 = 0;
 
 void AttitudeController::calc_average_velocity(){
-    vel_avg[avg_ind % 3] = vel_curr;
-    if (reinitialize_state || i < AVGS) {
-        if (reinitialize_state) i = 0;
-        i++;
+    vel_avg[vel_avg_ind % 3] = vel_curr;
+    if (reinitialize_state || i1 < VEL_AVGS) {
+        if (reinitialize_state) i1 = 0;
+        i1++;
         vel_curr_avg = vel_curr;
     } else {
-        vel_curr_avg = (vel_avg[0] + vel_avg[1] + vel_avg[2])/3;
+        for (int i = 0 ; i < VEL_AVGS; i++){
+            vel_curr_avg = vel_avg[i]; 
+        }
+        vel_curr_avg = vel_curr_avg/ VEL_AVGS;
     }
-    avg_ind++;
+    vel_avg_ind++;
+}
+
+void AttitudeController::calc_average_position(){
+    pos_avg[pos_avg_ind % 3] = pos_curr;
+    if (reinitialize_state || i2 < POS_AVGS) {
+        if (reinitialize_state) i2 = 0;
+        i2++;
+        pos_curr_avg = pos_curr;
+    } else {
+        pos_curr_avg = (pos_avg[0] + pos_avg[1] + pos_avg[2])/3;
+    }
+    pos_avg_ind++;
 }
 
 void AttitudeController::update_dt()  {
@@ -78,10 +94,11 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     //updating current velocity
     update_velocity_state();
     calc_average_velocity();
+    calc_average_position();
 
     //Calculating position error
     pos_desi = desired_pos;
-    pos_err = pos_curr - pos_desi;
+    pos_err = pos_desi - pos_curr_avg;
 
     //Calculating desired velocity
     vel_desi = pos_err.multiplyGain(pos_pgain);
@@ -90,7 +107,7 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     vel_desi.bindToMaxVal(max_vel);
 
     //calculating velocity error
-    vel_err = vel_curr - vel_desi;
+    vel_err = vel_desi - vel_curr;
     
     //updating velocity error integration
     update_velocity_err_integration();
@@ -103,6 +120,8 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
 void AttitudeController::acceleration_to_attitude(float forward_acc, float right_acc, float rot, float desir_yaw){
     this->forward_acc = forward_acc;
     this->right_acc = right_acc;
+
+    rot  = rot * M_PI/180.0f;
 
     rot_right_acc = right_acc * cos(rot) - forward_acc * sin(rot);
     rot_forward_acc = right_acc * sin(rot) + forward_acc * cos(rot);

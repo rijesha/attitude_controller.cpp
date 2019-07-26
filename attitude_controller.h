@@ -10,10 +10,11 @@
 using namespace std;
 
 #define RESET_STATE_DT 0.1
-#define MAX_HORZ_VEL 0.25
+#define MAX_HORZ_VEL 0.50
 #define MAX_VERT_VEL 0.25
 #define MAX_ANGLE 5
-#define AVGS 3
+#define POS_AVGS 3
+#define VEL_AVGS 5
 
 class AttitudeController {
     private:
@@ -24,10 +25,15 @@ class AttitudeController {
 
         float dt = 0.1;
 
-        int avg_ind = 0;
-        Vector3f vel_avg[AVGS] = {{0, 0, 0},{0, 0, 0},{0, 0, 0}};
+        int vel_avg_ind = 0;
+        Vector3f vel_avg[VEL_AVGS] = {{0, 0, 0},{0, 0, 0},{0, 0, 0}};
         Vector3f vel_curr_avg = {0,0,0};
 
+        int pos_avg_ind = 0;
+        Vector3f pos_avg[POS_AVGS] = {{0, 0, 0},{0, 0, 0},{0, 0, 0}};
+        Vector3f pos_curr_avg = {0,0,0};
+
+        void calc_average_position();
         void calc_average_velocity();
         void update_dt();
         void update_velocity_state();
@@ -62,8 +68,8 @@ class AttitudeController {
 
         Vector3f acc_desi = {0, 0, 0};
 
-        Vector3f pos_pgain = {0.25, 0.25, 0.25};
-        Vector3f vel_pgain = {.8, .8, .8};
+        Vector3f pos_pgain = {0.50, 0.50, 0.50};
+        Vector3f vel_pgain = {1.5, 1.5, 1.5};
 
         Vector3f vel_igain = {0.00000, 0.00000, 0.00000};
         Vector3f max_vel = {MAX_HORZ_VEL, MAX_HORZ_VEL, MAX_VERT_VEL};

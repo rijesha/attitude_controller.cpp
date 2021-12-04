@@ -1,36 +1,52 @@
 #include "attitude_controller.h"
 
+#define MAX_ANGLE 2
+#define MAX_HORZ_VEL 0.3
+#define MAX_VERT_VEL 0.3
+
 int i1 = 0;
 int i2 = 0;
 
-void AttitudeController::calc_average_velocity(){
+void AttitudeController::calc_average_velocity()
+{
     vel_avg[vel_avg_ind % 3] = vel_curr;
-    if (reinitialize_state || i1 < VEL_AVGS) {
-        if (reinitialize_state) i1 = 0;
+    if (reinitialize_state || i1 < VEL_AVGS)
+    {
+        if (reinitialize_state)
+            i1 = 0;
         i1++;
         vel_curr_avg = vel_curr;
-    } else {
-        for (int i = 0 ; i < VEL_AVGS; i++){
-            vel_curr_avg = vel_avg[i]; 
+    }
+    else
+    {
+        for (int i = 0; i < VEL_AVGS; i++)
+        {
+            vel_curr_avg = vel_avg[i];
         }
-        vel_curr_avg = vel_curr_avg/ VEL_AVGS;
+        vel_curr_avg = vel_curr_avg / VEL_AVGS;
     }
     vel_avg_ind++;
 }
 
-void AttitudeController::calc_average_position(){
+void AttitudeController::calc_average_position()
+{
     pos_avg[pos_avg_ind % 3] = pos_curr;
-    if (reinitialize_state || i2 < POS_AVGS) {
-        if (reinitialize_state) i2 = 0;
+    if (reinitialize_state || i2 < POS_AVGS)
+    {
+        if (reinitialize_state)
+            i2 = 0;
         i2++;
         pos_curr_avg = pos_curr;
-    } else {
-        pos_curr_avg = (pos_avg[0] + pos_avg[1] + pos_avg[2])/3;
+    }
+    else
+    {
+        pos_curr_avg = (pos_avg[0] + pos_avg[1] + pos_avg[2]) / 3;
     }
     pos_avg_ind++;
 }
 
-void AttitudeController::update_dt()  {
+void AttitudeController::update_dt()
+{
     current_run_time = std::chrono::high_resolution_clock::now();
     elapsed = current_run_time - last_run_time;
     dt = elapsed.count();
@@ -39,22 +55,29 @@ void AttitudeController::update_dt()  {
     reinitialize_state = (dt < RESET_STATE_DT) ? false : true;
 }
 
-void AttitudeController::update_velocity_state()  {
-    if (!reinitialize_state){
-        vel_curr = (pos_curr - pos_last)/dt;
+void AttitudeController::update_velocity_state()
+{
+    if (!reinitialize_state)
+    {
+        vel_curr = (pos_curr - pos_last) / dt;
     }
     pos_last = pos_curr;
 }
 
-void AttitudeController::update_velocity_err_integration()  {
-    if (reinitialize_state) {
+void AttitudeController::update_velocity_err_integration()
+{
+    if (reinitialize_state)
+    {
         vel_int = {0, 0, 0};
-    } else {
-        vel_int += vel_err*dt;
+    }
+    else
+    {
+        vel_int += vel_err * dt;
     }
 }
 
-float AttitudeController::bind_max_value(float val, float max_val){
+float AttitudeController::bind_max_value(float val, float max_val)
+{
     if (val > max_val)
         return max_val;
     else if (val < -max_val)
@@ -62,7 +85,8 @@ float AttitudeController::bind_max_value(float val, float max_val){
     return val;
 }
 
-float AttitudeController::bind_max_value(float val, float max_val, float min_val){
+float AttitudeController::bind_max_value(float val, float max_val, float min_val)
+{
     if (val > max_val)
         return max_val;
     else if (val < min_val)
@@ -70,27 +94,61 @@ float AttitudeController::bind_max_value(float val, float max_val, float min_val
     return val;
 }
 
-void AttitudeController::updateQuaternion(){
-    float cr2 = cosf(roll_target*M_PI/180.0f*0.5f);
-    float cp2 = cosf(pitch_target*M_PI/180.0f*0.5f);
-    float cy2 = cosf(yaw_target*M_PI/180.0f*0.5f);
-    float sr2 = sinf(roll_target*M_PI/180.0f*0.5f);
-    float sp2 = sinf(pitch_target*M_PI/180.0f*0.5f);
-    float sy2 = sinf(yaw_target*M_PI/180.0f*0.5f);
+void AttitudeController::updateQuaternion()
+{
+    float cr2 = cosf(roll_target * M_PI / 180.0f * 0.5f);
+    float cp2 = cosf(pitch_target * M_PI / 180.0f * 0.5f);
+    float cy2 = cosf(yaw_target * M_PI / 180.0f * 0.5f);
+    float sr2 = sinf(roll_target * M_PI / 180.0f * 0.5f);
+    float sp2 = sinf(pitch_target * M_PI / 180.0f * 0.5f);
+    float sy2 = sinf(yaw_target * M_PI / 180.0f * 0.5f);
 
-    q1 = cr2*cp2*cy2 + sr2*sp2*sy2;
-    q2 = sr2*cp2*cy2 - cr2*sp2*sy2;
-    q3 = cr2*sp2*cy2 + sr2*cp2*sy2;
-    q4 = cr2*cp2*sy2 - sr2*sp2*cy2;
+    q1 = cr2 * cp2 * cy2 + sr2 * sp2 * sy2;
+    q2 = sr2 * cp2 * cy2 - cr2 * sp2 * sy2;
+    q3 = cr2 * sp2 * cy2 + sr2 * cp2 * sy2;
+    q4 = cr2 * cp2 * sy2 - sr2 * sp2 * cy2;
 }
 
-AttitudeController::AttitudeController(){}
+AttitudeController::AttitudeController()
+{
+    set_max_vel(MAX_HORZ_VEL);
 
-void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
+    vel_pgain.x = .9;
+    vel_pgain.y = .9;
+    vel_pgain.z = .9;
+}
+
+void AttitudeController::set_pos_pgain(float gain)
+{
+    pos_pgain.x = gain;
+    pos_pgain.y = gain;
+    pos_pgain.z = gain;
+}
+void AttitudeController::set_vel_pgain(float gain)
+{
+    vel_pgain.x = gain;
+    vel_pgain.y = gain;
+    vel_pgain.z = gain;
+}
+void AttitudeController::set_vel_igain(float gain)
+{
+    vel_igain.x = gain;
+    vel_igain.y = gain;
+    vel_igain.z = gain;
+}
+void AttitudeController::set_max_vel(float max_velocity)
+{
+    max_vel.x = max_velocity;
+    max_vel.y = max_velocity;
+    max_vel.z = max_velocity;
+}
+
+void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos)
+{
     update_dt();
 
     pos_curr = current_pos;
-    
+
     //updating current velocity
     update_velocity_state();
     calc_average_velocity();
@@ -108,7 +166,7 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
 
     //calculating velocity error
     vel_err = vel_desi - vel_curr;
-    
+
     //updating velocity error integration
     update_velocity_err_integration();
 
@@ -117,53 +175,55 @@ void AttitudeController::run_loop(Vector3f current_pos, Vector3f desired_pos){
     reinitialize_state = false;
 }
 
-void AttitudeController::acceleration_to_attitude(float forward_acc, float right_acc, float rot, float desir_yaw){
+void AttitudeController::acceleration_to_attitude(float forward_acc, float right_acc, float rot, float desir_yaw)
+{
     this->forward_acc = forward_acc;
     this->right_acc = right_acc;
 
-    rot  = rot * M_PI/180.0f;
+    this->rot = rot * M_PI / 180.0f;
 
-    rot_right_acc = right_acc * cos(rot) - forward_acc * sin(rot);
-    rot_forward_acc = right_acc * sin(rot) + forward_acc * cos(rot);
+    rot_right_acc = right_acc * cos(this->rot) - forward_acc * sin(this->rot);
+    rot_forward_acc = right_acc * sin(this->rot) + forward_acc * cos(this->rot);
 
-    pitch_target = atanf(-rot_forward_acc/(9.806))*(180.0f/M_PI);
-    cos_pitch_target = cosf(pitch_target*M_PI/180.0f);
-    roll_target = atanf(rot_right_acc*cos_pitch_target/(9.806))*(180.0f/M_PI);
-    
+    pitch_target = atanf(-rot_forward_acc / (9.806)) * (180.0f / M_PI);
+    cos_pitch_target = cosf(pitch_target * M_PI / 180.0f);
+    roll_target = atanf(rot_right_acc * cos_pitch_target / (9.806)) * (180.0f / M_PI);
+
     pitch_target = bind_max_value(pitch_target, MAX_ANGLE);
     roll_target = bind_max_value(roll_target, MAX_ANGLE);
     yaw_target = desir_yaw;
 }
 
-Vector3f AttitudeController::get_desired_velocity(){
+Vector3f AttitudeController::get_desired_velocity()
+{
     return vel_desi;
 }
 
-string AttitudeController::get_state_string(){
+string AttitudeController::get_state_string()
+{
     stringstream output;
     output << std::fixed;
     output << std::setprecision(5);
 
     output << pos_curr.x << ',' << pos_curr.y << ',' << pos_curr.z << ',';
     output << pos_last.x << ',' << pos_last.y << ',' << pos_last.z << ',';
-    output << pos_err.x  << ',' << pos_err.y  << ',' << pos_err.z  << ',';
+    output << pos_err.x << ',' << pos_err.y << ',' << pos_err.z << ',';
     output << pos_desi.x << ',' << pos_desi.y << ',' << pos_desi.z << ',';
     output << vel_curr.x << ',' << vel_curr.y << ',' << vel_curr.z << ',';
     output << vel_desi.x << ',' << vel_desi.y << ',' << vel_desi.z << ',';
-    output << vel_err.x  << ',' << vel_err.y  << ',' << vel_err.z  << ',';
-    output << vel_int.x  << ',' << vel_int.y  << ',' << vel_int.z  << ',';
+    output << vel_err.x << ',' << vel_err.y << ',' << vel_err.z << ',';
+    output << vel_int.x << ',' << vel_int.y << ',' << vel_int.z << ',';
     output << acc_desi.x << ',' << acc_desi.y << ',' << acc_desi.z << ',';
 
-    output << forward_acc << ',' << right_acc << ','; 
+    output << forward_acc << ',' << right_acc << ',';
     output << rot_forward_acc << ',' << rot_right_acc << ',';
-    
+
     output << pitch_target << ',';
-    output << roll_target << ',';   
+    output << roll_target << ',';
     output << yaw_target << ',';
     output << thrust;
     return output.str();
 }
-
 
 //To do
 //test what happens if the uav doesn't recevie messages frequently enough.

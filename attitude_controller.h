@@ -1,11 +1,11 @@
-#include "vector3.h"
-#include <ctime>
 #include <chrono>
-#include <string>
 #include <cstring>
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
+#include <string>
+#include "vector3.h"
 
 using namespace std;
 
@@ -14,79 +14,87 @@ using namespace std;
 #define POS_AVGS 3
 #define VEL_AVGS 5
 
-class AttitudeController
-{
-private:
-    std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> last_run_time = std::chrono::high_resolution_clock::now();
-    std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> current_run_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<float> elapsed = current_run_time - last_run_time;
+struct PositionControllerState {
+  Vector3f position;
+  Vector3f velocity;
+  Vector3f velocity_desired;
+  Vector3f acceleration_desired;
+};
 
-    float dt = 0.1;
+class PositionController {
+ private:
+  std::chrono::time_point<std::chrono::high_resolution_clock,
+                          std::chrono::nanoseconds>
+      last_run_time = std::chrono::high_resolution_clock::now();
+  std::chrono::time_point<std::chrono::high_resolution_clock,
+                          std::chrono::nanoseconds>
+      current_run_time = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<float> elapsed = current_run_time - last_run_time;
 
-    int vel_avg_ind = 0;
-    Vector3f vel_avg[VEL_AVGS] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-    Vector3f vel_curr_avg = {0, 0, 0};
+  float dt = 0.1;
 
-    int pos_avg_ind = 0;
-    Vector3f pos_avg[POS_AVGS] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-    Vector3f pos_curr_avg = {0, 0, 0};
+  int vel_avg_ind = 0;
+  Vector3f vel_avg[VEL_AVGS] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+  Vector3f vel_curr_avg = {0, 0, 0};
 
-    void calc_average_position();
-    void calc_average_velocity();
-    void update_dt();
-    void update_velocity_state();
-    void update_velocity_err_integration();
-    float bind_max_value(float val, float max_val);
-    float bind_max_value(float val, float max_val, float min_val);
+  int pos_avg_ind = 0;
+  Vector3f pos_avg[POS_AVGS] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+  Vector3f pos_curr_avg = {0, 0, 0};
+  
+  
+  float forward_acc_;
+  float right_acc_;
+  float rot_;
+  float rot_right_acc_;
+  float rot_forward_acc_;
+  float pitch_target_;
+  float roll_target_;
+  float yaw_target_;
 
-    void updateQuaternion();
-    float q1, q2, q3, q4;
+  void calc_average_position();
+  void calc_average_velocity();
+  void update_dt();
+  void update_velocity_state();
+  void update_velocity_err_integration();
+  float bind_max_value(float val, float max_val);
 
-public:
-    AttitudeController();
-    void run_loop(Vector3f current_pos, Vector3f desired_pos);
-    void acceleration_to_attitude(float forward_acc, float right_acc, float rot, float desir_yaw = 0);
-    Vector3f get_desired_velocity(void);
-    string get_state_string(void);
+  void update_quaternion();
+  float q1_, q2_, q3_, q4_;
 
-    bool reinitialize_state = true;
+  int pos_avg_i_, vel_avg_i_ = 0;
 
-    Vector3f pos_curr = {0, 0, 0};
-    Vector3f pos_last = {0, 0, 0};
-    Vector3f pos_err = {0, 0, 0};
+  Vector3f pos_curr = {0, 0, 0};
+  Vector3f pos_last = {0, 0, 0};
+  Vector3f pos_err = {0, 0, 0};
 
-    Vector3f pos_desi = {0, 0, 0};
+  Vector3f pos_desi = {0, 0, 0};
 
-    Vector3f vel_curr = {0, 0, 0};
-    Vector3f vel_last = {0, 0, 0};
+  Vector3f vel_curr = {0, 0, 0};
+  Vector3f vel_last = {0, 0, 0};
 
-    Vector3f vel_desi = {0, 0, 0};
-    Vector3f vel_err = {0, 0, 0};
-    Vector3f vel_int = {0, 0, 0};
+  Vector3f vel_desi = {0, 0, 0};
+  Vector3f vel_err = {0, 0, 0};
+  Vector3f vel_int = {0, 0, 0};
 
-    Vector3f acc_desi = {0, 0, 0};
+  Vector3f acc_desi = {0, 0, 0};
 
-    Vector3f pos_pgain = {0, 0, 0};
-    Vector3f vel_pgain = {0, 0, 0};
+  Vector3f pos_pgain = {0, 0, 0};
+  Vector3f vel_pgain = {0, 0, 0};
 
-    Vector3f vel_igain = {0.00, 0.00, 0.00};
-    Vector3f max_vel = {0, 0, 0};
+  Vector3f vel_igain = {0.00, 0.00, 0.00};
+  Vector3f max_vel = {0, 0, 0};
 
-    void set_pos_pgain(float gain);
-    void set_vel_pgain(float gain);
-    void set_vel_igain(float gain);
-    void set_max_vel(float gain);
+ public:
+  PositionController();
+  PositionControllerState run_loop(Vector3f current_pos, Vector3f desired_pos);
+  Vector3f acceleration_to_attitude(float forward_acc, float right_acc,
+                                    float rot, float desir_yaw = 0);
+  string get_state_string(void);
 
-    float forward_acc;
-    float right_acc;
-    float rot_forward_acc;
-    float rot_right_acc;
-    float rot;
+  bool reinitialize_state = true;
 
-    float hover_throttle = 0.5;
-    float pitch_target;
-    float cos_pitch_target;
-    float roll_target;
-    float yaw_target;
-    float thrust;
+  void set_pos_pgain(float gain);
+  void set_vel_pgain(float gain);
+  void set_vel_igain(float gain);
+  void set_max_vel(float gain);
 };

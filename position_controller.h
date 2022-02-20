@@ -40,8 +40,10 @@ class PositionController {
   int pos_avg_ind = 0;
   Vector3f pos_avg[POS_AVGS] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
   Vector3f pos_curr_avg = {0, 0, 0};
-  
-  
+
+  float get_rate(float current_value, float desired_value, float p_gain);
+  float wrap_angle(float angle);
+
   float forward_acc_;
   float right_acc_;
   float rot_;
@@ -57,9 +59,6 @@ class PositionController {
   void update_velocity_state();
   void update_velocity_err_integration();
   float bind_max_value(float val, float max_val);
-
-  void update_quaternion();
-  float q1_, q2_, q3_, q4_;
 
   int pos_avg_i_, vel_avg_i_ = 0;
 
@@ -86,9 +85,12 @@ class PositionController {
 
  public:
   PositionController();
+
   PositionControllerState run_loop(Vector3f current_pos, Vector3f desired_pos);
   Vector3f acceleration_to_attitude(float forward_acc, float right_acc,
-                                    float rot, float desir_yaw = 0);
+                                    float rot);
+  float get_yaw_rate(float current_yaw, float desired_yaw);
+
   string get_state_string(void);
 
   bool reinitialize_state = true;

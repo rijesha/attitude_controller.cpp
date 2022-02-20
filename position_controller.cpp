@@ -66,20 +66,6 @@ float PositionController::bind_max_value(float val, float max_val) {
   return val;
 }
 
-void PositionController::update_quaternion() {
-  float cr2 = cosf(roll_target_ * M_PI / 180.0f * 0.5f);
-  float cp2 = cosf(pitch_target_ * M_PI / 180.0f * 0.5f);
-  float cy2 = cosf(yaw_target_ * M_PI / 180.0f * 0.5f);
-  float sr2 = sinf(roll_target_ * M_PI / 180.0f * 0.5f);
-  float sp2 = sinf(pitch_target_ * M_PI / 180.0f * 0.5f);
-  float sy2 = sinf(yaw_target_ * M_PI / 180.0f * 0.5f);
-
-  q1_ = cr2 * cp2 * cy2 + sr2 * sp2 * sy2;
-  q2_ = sr2 * cp2 * cy2 - cr2 * sp2 * sy2;
-  q3_ = cr2 * sp2 * cy2 + sr2 * cp2 * sy2;
-  q4_ = cr2 * cp2 * sy2 - sr2 * sp2 * cy2;
-}
-
 PositionController::PositionController() {
   set_max_vel(MAX_HORZ_VEL);
 
@@ -107,6 +93,18 @@ void PositionController::set_max_vel(float max_velocity) {
   max_vel.x = max_velocity;
   max_vel.y = max_velocity;
   max_vel.z = max_velocity;
+}
+
+float PositionController::get_rate(float current_value, float desired_value,
+                                   float p_gain) {
+  return (desired_value - current_value) * p_gain;
+}
+
+float PositionController::wrap_angle(float angle) {
+  if (angle > 180) {
+    return angle - 360;
+  }
+  return angle;
 }
 
 PositionControllerState PositionController::run_loop(Vector3f current_pos,
@@ -145,11 +143,10 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
 
 Vector3f PositionController::acceleration_to_attitude(float forward_acc,
                                                       float right_acc,
-                                                      float rot,
-                                                      float desir_yaw) {
+                                                      float rot) {
   forward_acc_ = forward_acc;
   right_acc_ = right_acc;
-  
+
   rot_ = rot * M_PI / 180.0f;
 
   rot_right_acc_ = right_acc * cos(rot_) - forward_acc * sin(rot_);
@@ -162,9 +159,14 @@ Vector3f PositionController::acceleration_to_attitude(float forward_acc,
 
   pitch_target_ = bind_max_value(pitch_target_, MAX_ANGLE);
   roll_target_ = bind_max_value(roll_target_, MAX_ANGLE);
-  yaw_target_ = desir_yaw;
 
-  return {roll_target_, pitch_target_, yaw_target_};
+  return {roll_target_, pitch_target_, 0};
+}
+
+float PositionController::get_yaw_rate(float current_yaw, float desired_yaw) {
+  current_yaw = wrap_angle(current_yaw);
+  desired_yaw = wrap_angle(desired_yaw);
+  return get_rate(current_yaw, desired_yaw, 0.8);
 }
 
 string PositionController::get_state_string() {

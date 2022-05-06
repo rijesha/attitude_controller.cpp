@@ -77,8 +77,8 @@ class PositionController {
 
   Vector3f acc_desi = {0, 0, 0};
 
-  Vector3f pos_pgain = {0, 0, 0};
-  Vector3f vel_pgain = {0, 0, 0};
+  Vector3f pos_pgain = {0.1, 0.1, 0.1};
+  Vector3f vel_pgain = {0.1, 0.1, 0.1};
 
   Vector3f vel_igain = {0.00, 0.00, 0.00};
   Vector3f max_vel = {0, 0, 0};

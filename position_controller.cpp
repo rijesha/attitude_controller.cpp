@@ -1,9 +1,5 @@
 #include "position_controller.h"
 
-#define MAX_ANGLE 2
-#define MAX_HORZ_VEL 0.3
-#define MAX_VERT_VEL 0.3
-
 void PositionController::calc_average_velocity() {
   vel_avg[vel_avg_ind % 3] = vel_curr;
   if (reinitialize_state || vel_avg_i_ < VEL_AVGS) {
@@ -66,34 +62,8 @@ float PositionController::bind_max_value(float val, float max_val) {
   return val;
 }
 
-PositionController::PositionController() {
-  set_max_vel(MAX_HORZ_VEL);
-
-  vel_pgain.x = .9;
-  vel_pgain.y = .9;
-  vel_pgain.z = .9;
-}
-
-void PositionController::set_pos_pgain(float gain) {
-  pos_pgain.x = gain;
-  pos_pgain.y = gain;
-  pos_pgain.z = gain;
-}
-void PositionController::set_vel_pgain(float gain) {
-  vel_pgain.x = gain;
-  vel_pgain.y = gain;
-  vel_pgain.z = gain;
-}
-void PositionController::set_vel_igain(float gain) {
-  vel_igain.x = gain;
-  vel_igain.y = gain;
-  vel_igain.z = gain;
-}
-void PositionController::set_max_vel(float max_velocity) {
-  max_vel.x = max_velocity;
-  max_vel.y = max_velocity;
-  max_vel.z = max_velocity;
-}
+PositionController::PositionController(float max_angle, float max_speed)
+    : max_vel{max_speed, max_speed, max_speed}, max_angle_(max_angle) {}
 
 float PositionController::get_rate(float current_value, float desired_value,
                                    float p_gain) {
@@ -157,8 +127,8 @@ Vector3f PositionController::acceleration_to_attitude(float forward_acc,
   roll_target_ =
       atanf(rot_right_acc_ * cos_pitch_target / (9.806)) * (180.0f / M_PI);
 
-  pitch_target_ = bind_max_value(pitch_target_, MAX_ANGLE);
-  roll_target_ = bind_max_value(roll_target_, MAX_ANGLE);
+  pitch_target_ = bind_max_value(pitch_target_, max_angle_);
+  roll_target_ = bind_max_value(roll_target_, max_angle_);
 
   return {roll_target_, pitch_target_, 0};
 }

@@ -80,11 +80,15 @@ class PositionController {
   Vector3f pos_pgain = {0.1, 0.1, 0.1};
   Vector3f vel_pgain = {0.1, 0.1, 0.1};
 
-  Vector3f vel_igain = {0.00, 0.00, 0.00};
-  Vector3f max_vel = {0, 0, 0};
+  Vector3f vel_igain = {0.0, 0.0, 0.0};
+  Vector3f max_vel;
+
+  float yaw_gain{0.8};
+
+  float max_angle_;
 
  public:
-  PositionController();
+  PositionController(float max_angle, float max_speed);
 
   PositionControllerState run_loop(Vector3f current_pos, Vector3f desired_pos);
   Vector3f acceleration_to_attitude(float forward_acc, float right_acc,
@@ -95,8 +99,30 @@ class PositionController {
 
   bool reinitialize_state = true;
 
-  void set_pos_pgain(float gain);
-  void set_vel_pgain(float gain);
-  void set_vel_igain(float gain);
-  void set_max_vel(float gain);
+  void set_pos_pgain(float gain) {
+    pos_pgain.x = gain;
+    pos_pgain.y = gain;
+  };
+  void set_vel_pgain(float gain) {
+    vel_pgain.x = gain;
+    vel_pgain.y = gain;
+    gain;
+  };
+  void set_vel_igain(float gain) {
+    vel_igain.x = gain;
+    vel_igain.y = gain;
+  };
+
+  void set_pos_z_pgain(float gain) { pos_pgain.z = gain; };
+  void set_vel_z_pgain(float gain) { vel_pgain.z = gain; };
+  void set_vel_z_igain(float gain) { vel_igain.z = gain; };
+  void set_yaw_gain(float gain) { yaw_gain = gain; };
+
+  float get_pos_pgain() { return pos_pgain.x; };
+  float get_vel_pgain() { return vel_pgain.x; };
+  float get_vel_igain() { return vel_igain.x; };
+  float get_pos_z_pgain() { return pos_pgain.z; };
+  float get_vel_z_pgain() { return vel_pgain.z; };
+  float get_vel_z_igain() { return vel_igain.z; };
+  float get_yaw_gain() { return yaw_gain; };
 };

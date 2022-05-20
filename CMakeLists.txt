@@ -15,6 +15,12 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         position_controller.cpp
         vector3.cpp
+        fusion-ukf/src/measurementpredictor.cpp
+        fusion-ukf/src/statepredictor.cpp
+        fusion-ukf/src/stateupdater.cpp
+        fusion-ukf/src/datapoint.cpp
+        fusion-ukf/src/fusionukf.cpp
+        fusion-ukf/headers/
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC ./)
+target_include_directories(${PROJECT_NAME} PUBLIC ./ fusion-ukf/headers/)

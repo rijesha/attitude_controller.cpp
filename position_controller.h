@@ -7,6 +7,9 @@
 #include <string>
 #include "vector3.h"
 
+#include "datapoint.h"
+#include "fusionukf.h"
+
 using namespace std;
 
 #define RESET_STATE_DT 0.1
@@ -86,6 +89,9 @@ class PositionController {
   float yaw_gain{0.8};
 
   float max_angle_;
+
+
+  FusionUKF fusionUKF;
 
  public:
   PositionController(float max_angle, float max_speed);

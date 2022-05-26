@@ -17,15 +17,20 @@ using namespace std;
 #define POS_AVGS 3
 #define VEL_AVGS 5
 
-struct PositionControllerState {
+struct PositionControllerState
+{
   Vector3f position;
   Vector3f velocity;
   Vector3f velocity_desired;
   Vector3f acceleration_desired;
 };
 
-class PositionController {
- private:
+class PositionController
+{
+private:
+  std::chrono::time_point<std::chrono::high_resolution_clock,
+                          std::chrono::nanoseconds>
+      start_time = std::chrono::high_resolution_clock::now();
   std::chrono::time_point<std::chrono::high_resolution_clock,
                           std::chrono::nanoseconds>
       last_run_time = std::chrono::high_resolution_clock::now();
@@ -35,6 +40,8 @@ class PositionController {
   std::chrono::duration<float> elapsed = current_run_time - last_run_time;
 
   float dt = 0.1;
+
+  long timestamp = 0;
 
   int vel_avg_ind = 0;
   Vector3f vel_avg[VEL_AVGS] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
@@ -90,10 +97,9 @@ class PositionController {
 
   float max_angle_;
 
-
   FusionUKF fusionUKF;
 
- public:
+public:
   PositionController(float max_angle, float max_speed);
 
   PositionControllerState run_loop(Vector3f current_pos, Vector3f desired_pos);
@@ -105,16 +111,19 @@ class PositionController {
 
   bool reinitialize_state = true;
 
-  void set_pos_pgain(float gain) {
+  void set_pos_pgain(float gain)
+  {
     pos_pgain.x = gain;
     pos_pgain.y = gain;
   };
-  void set_vel_pgain(float gain) {
+  void set_vel_pgain(float gain)
+  {
     vel_pgain.x = gain;
     vel_pgain.y = gain;
     gain;
   };
-  void set_vel_igain(float gain) {
+  void set_vel_igain(float gain)
+  {
     vel_igain.x = gain;
     vel_igain.y = gain;
   };

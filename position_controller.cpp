@@ -46,6 +46,7 @@ void PositionController::update_dt()
 {
   current_run_time = std::chrono::high_resolution_clock::now();
   elapsed = current_run_time - last_run_time;
+  timestamp = (current_run_time - start_time).count();
   dt = elapsed.count();
   last_run_time = current_run_time;
 
@@ -117,13 +118,18 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
   fusionUKF.process(sensor_data);
   prediction = fusionUKF.get();
   double nis = fusionUKF.get_nis();
+  cout << "raw_x: " << current_pos.x << "raw_y: " << current_pos.y << " x: " <<  prediction[0] << " y: " <<  prediction[1] << " dx: " <<  prediction[2] << " dy: " <<  prediction[3]  << endl;
+  pos_curr.z = current_pos.z;
+  pos_curr.x = prediction[0];
+  pos_curr.y = prediction[1];
 
-  pos_curr = current_pos;
+  vel_curr.x = prediction[2];
+  vel_curr.y = prediction[3];
 
   // updating current velocity
-  update_velocity_state();
-  calc_average_velocity();
-  calc_average_position();
+  //update_velocity_state();
+  //calc_average_velocity();
+  //calc_average_position();
 
   // Calculating position error
   pos_desi = desired_pos;

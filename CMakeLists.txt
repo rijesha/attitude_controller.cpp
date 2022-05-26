@@ -20,6 +20,7 @@ target_sources(${PROJECT_NAME}
         fusion-ukf/src/stateupdater.cpp
         fusion-ukf/src/datapoint.cpp
         fusion-ukf/src/fusionukf.cpp
+        fusion-ukf/src/tools.cpp
         fusion-ukf/headers/
 )
 

@@ -1,19 +1,13 @@
 #include "position_controller.h"
 
-void PositionController::calc_average_velocity()
-{
+void PositionController::calc_average_velocity() {
   vel_avg[vel_avg_ind % 3] = vel_curr;
-  if (reinitialize_state || vel_avg_i_ < VEL_AVGS)
-  {
-    if (reinitialize_state)
-      vel_avg_i_ = 0;
+  if (reinitialize_state || vel_avg_i_ < VEL_AVGS) {
+    if (reinitialize_state) vel_avg_i_ = 0;
     vel_avg_i_++;
     vel_curr_avg = vel_curr;
-  }
-  else
-  {
-    for (int i = 0; i < VEL_AVGS; i++)
-    {
+  } else {
+    for (int i = 0; i < VEL_AVGS; i++) {
       vel_curr_avg = vel_avg[i];
     }
     vel_curr_avg = vel_curr_avg / VEL_AVGS;
@@ -21,20 +15,14 @@ void PositionController::calc_average_velocity()
   vel_avg_ind++;
 }
 
-void PositionController::calc_average_position()
-{
+void PositionController::calc_average_position() {
   pos_avg[pos_avg_ind % 3] = pos_curr;
-  if (reinitialize_state || pos_avg_i_ < POS_AVGS)
-  {
-    if (reinitialize_state)
-      pos_avg_i_ = 0;
+  if (reinitialize_state || pos_avg_i_ < POS_AVGS) {
+    if (reinitialize_state) pos_avg_i_ = 0;
     pos_avg_i_++;
     pos_curr_avg = pos_curr;
-  }
-  else
-  {
-    for (int i = 0; i < POS_AVGS; i++)
-    {
+  } else {
+    for (int i = 0; i < POS_AVGS; i++) {
       pos_curr_avg = pos_avg[i];
     }
     pos_curr_avg = pos_curr_avg / POS_AVGS;
@@ -42,8 +30,7 @@ void PositionController::calc_average_position()
   pos_avg_ind++;
 }
 
-void PositionController::update_dt()
-{
+void PositionController::update_dt() {
   current_run_time = std::chrono::high_resolution_clock::now();
   elapsed = current_run_time - last_run_time;
   timestamp = (current_run_time - start_time).count();
@@ -53,29 +40,22 @@ void PositionController::update_dt()
   reinitialize_state = (dt < RESET_STATE_DT) ? false : true;
 }
 
-void PositionController::update_velocity_state()
-{
-  if (!reinitialize_state)
-  {
+void PositionController::update_velocity_state() {
+  if (!reinitialize_state) {
     vel_curr = (pos_curr - pos_last) / dt;
   }
   pos_last = pos_curr;
 }
 
-void PositionController::update_velocity_err_integration()
-{
-  if (reinitialize_state)
-  {
+void PositionController::update_velocity_err_integration() {
+  if (reinitialize_state) {
     vel_int = {0, 0, 0};
-  }
-  else
-  {
+  } else {
     vel_int += vel_err * dt;
   }
 }
 
-float PositionController::bind_max_value(float val, float max_val)
-{
+float PositionController::bind_max_value(float val, float max_val) {
   if (val > max_val)
     return max_val;
   else if (val < -max_val)
@@ -87,29 +67,26 @@ PositionController::PositionController(float max_angle, float max_speed)
     : max_vel{max_speed, max_speed, max_speed}, max_angle_(max_angle) {}
 
 float PositionController::get_rate(float current_value, float desired_value,
-                                   float p_gain)
-{
+                                   float p_gain) {
   return (desired_value - current_value) * p_gain;
 }
 
-float PositionController::wrap_angle(float angle)
-{
-  if (angle > 180)
-  {
+float PositionController::wrap_angle(float angle) {
+  if (angle > 180) {
     return angle - 360;
   }
   return angle;
 }
 
 PositionControllerState PositionController::run_loop(Vector3f current_pos,
-                                                     Vector3f desired_pos)
-{
+                                                     Vector3f desired_pos) {
   update_dt();
 
   DataPoint sensor_data;
   VectorXd lidar_vec(NZ_LIDAR);
   lidar_vec << current_pos.x, current_pos.y;
-  sensor_data.set(timestamp, DataPointType::LIDAR, lidar_vec);
+  cout << timestamp << endl;
+  sensor_data.set(timestamp/1000, DataPointType::LIDAR, lidar_vec);
 
   VectorXd prediction;
   VectorXd measurement;
@@ -118,7 +95,9 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
   fusionUKF.process(sensor_data);
   prediction = fusionUKF.get();
   double nis = fusionUKF.get_nis();
-  cout << "raw_x: " << current_pos.x << "raw_y: " << current_pos.y << " x: " <<  prediction[0] << " y: " <<  prediction[1] << " dx: " <<  prediction[2] << " dy: " <<  prediction[3]  << endl;
+  cout << "raw_x: " << current_pos.x << "raw_y: " << current_pos.y
+       << " x: " << prediction[0] << " y: " << prediction[1]
+       << " dx: " << prediction[2] << " dy: " << prediction[3] << endl;
   pos_curr.z = current_pos.z;
   pos_curr.x = prediction[0];
   pos_curr.y = prediction[1];
@@ -127,9 +106,9 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
   vel_curr.y = prediction[3];
 
   // updating current velocity
-  //update_velocity_state();
-  //calc_average_velocity();
-  //calc_average_position();
+  // update_velocity_state();
+  // calc_average_velocity();
+  // calc_average_position();
 
   // Calculating position error
   pos_desi = desired_pos;
@@ -156,8 +135,7 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
 
 Vector3f PositionController::acceleration_to_attitude(float forward_acc,
                                                       float right_acc,
-                                                      float rot)
-{
+                                                      float rot) {
   forward_acc_ = forward_acc;
   right_acc_ = right_acc;
 
@@ -177,15 +155,13 @@ Vector3f PositionController::acceleration_to_attitude(float forward_acc,
   return {roll_target_, pitch_target_, 0};
 }
 
-float PositionController::get_yaw_rate(float current_yaw, float desired_yaw)
-{
+float PositionController::get_yaw_rate(float current_yaw, float desired_yaw) {
   current_yaw = wrap_angle(current_yaw);
   desired_yaw = wrap_angle(desired_yaw);
   return get_rate(current_yaw, desired_yaw, 0.8);
 }
 
-string PositionController::get_state_string()
-{
+string PositionController::get_state_string() {
   stringstream output;
   output << std::fixed;
   output << std::setprecision(5);

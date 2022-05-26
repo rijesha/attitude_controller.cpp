@@ -9,9 +9,8 @@ enum class DataPointType
   TRUTH
 };
 
-const int NZ_RADAR = 3;                // number of radar measurements
 const int NZ_LIDAR = 2;                // number of lidar measurements
-const int NX = 5;                      // number of states
+const int NX = 4;                      // number of states
 const int NAUGMENTED = NX + 2;         // number of states plus two noise values
 const int NSIGMA = NAUGMENTED * 2 + 1; // number of sigma points
 
@@ -30,6 +29,6 @@ const int LAMBDA = 3 - NAUGMENTED;              // parameter for tuning
 const double SCALE = sqrt(LAMBDA + NAUGMENTED); // used to create augmented sigma points
 const double W = 0.5 / (LAMBDA + NAUGMENTED);
 const double W0 = LAMBDA / double(LAMBDA + NAUGMENTED);
-const double WEIGHTS[NSIGMA] = {W0, W, W, W, W, W, W, W, W, W, W, W, W, W, W};
+const double WEIGHTS[NSIGMA] = {W0, W, W, W, W, W, W, W, W, W, W, W, W};
 
 #endif /* SETTINGS_H_ */

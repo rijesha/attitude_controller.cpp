@@ -98,6 +98,8 @@ private:
   float max_angle_;
 
   FusionUKF fusionUKF;
+  FusionUKF fusionheight;
+  FusionUKF fusionyaw;
 
 public:
   PositionController(float max_angle, float max_speed);

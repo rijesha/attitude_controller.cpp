@@ -85,30 +85,28 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
   DataPoint sensor_data;
   VectorXd lidar_vec(NZ_LIDAR);
   lidar_vec << current_pos.x, current_pos.y;
-  cout << timestamp << endl;
   sensor_data.set(timestamp/1000, DataPointType::LIDAR, lidar_vec);
 
   VectorXd prediction;
-  VectorXd measurement;
-  DataPoint estimation;
 
   fusionUKF.process(sensor_data);
   prediction = fusionUKF.get();
-  double nis = fusionUKF.get_nis();
-  cout << "raw_x: " << current_pos.x << "raw_y: " << current_pos.y
-       << " x: " << prediction[0] << " y: " << prediction[1]
-       << " dx: " << prediction[2] << " dy: " << prediction[3] << endl;
-  pos_curr.z = current_pos.z;
+
   pos_curr.x = prediction[0];
   pos_curr.y = prediction[1];
 
   vel_curr.x = prediction[2];
   vel_curr.y = prediction[3];
 
-  // updating current velocity
-  // update_velocity_state();
-  // calc_average_velocity();
-  // calc_average_position();
+  DataPoint height_data;
+  VectorXd height_vec(NZ_LIDAR);
+  height_vec << current_pos.z, current_pos.z;
+  height_data.set(timestamp/1000, DataPointType::LIDAR, height_vec);
+  fusionheight.process(height_data);
+  prediction = fusionheight.get();
+
+  pos_curr.z = prediction[0];
+  vel_curr.z = prediction[2];
 
   // Calculating position error
   pos_desi = desired_pos;

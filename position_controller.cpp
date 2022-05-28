@@ -110,7 +110,7 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
 
   // Calculating position error
   pos_desi = desired_pos;
-  pos_err = pos_desi - pos_curr_avg;
+  pos_err = pos_desi - pos_curr;
 
   // Calculating desired velocity
   vel_desi = pos_err.multiplyGain(pos_pgain);

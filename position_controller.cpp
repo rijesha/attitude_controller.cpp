@@ -1,5 +1,7 @@
 #include "position_controller.h"
 
+void PositionController::reset_integral() { vel_int = {0, 0, 0}; }
+
 void PositionController::calc_average_velocity() {
   vel_avg[vel_avg_ind % 3] = vel_curr;
   if (reinitialize_state || vel_avg_i_ < VEL_AVGS) {
@@ -85,7 +87,7 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
   DataPoint sensor_data;
   VectorXd lidar_vec(NZ_LIDAR);
   lidar_vec << current_pos.x, current_pos.y;
-  sensor_data.set(timestamp/1000, DataPointType::LIDAR, lidar_vec);
+  sensor_data.set(timestamp / 1000, DataPointType::LIDAR, lidar_vec);
 
   VectorXd prediction;
 
@@ -101,7 +103,7 @@ PositionControllerState PositionController::run_loop(Vector3f current_pos,
   DataPoint height_data;
   VectorXd height_vec(NZ_LIDAR);
   height_vec << current_pos.z, current_pos.z;
-  height_data.set(timestamp/1000, DataPointType::LIDAR, height_vec);
+  height_data.set(timestamp / 1000, DataPointType::LIDAR, height_vec);
   fusionheight.process(height_data);
   prediction = fusionheight.get();
 
@@ -156,7 +158,7 @@ Vector3f PositionController::acceleration_to_attitude(float forward_acc,
 float PositionController::get_yaw_rate(float current_yaw, float desired_yaw) {
   current_yaw = wrap_angle(current_yaw);
   desired_yaw = wrap_angle(desired_yaw);
-  return get_rate(current_yaw, desired_yaw, 0.8);
+  return get_rate(current_yaw, desired_yaw, yaw_gain);
 }
 
 string PositionController::get_state_string() {
